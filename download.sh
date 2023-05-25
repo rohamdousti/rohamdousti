@@ -3,7 +3,7 @@
 
 eval `echo "${QUERY_STRING}"|tr '&' ';'`
 client=$(echo $client | tr -d '\r')
-echo "Content-type: text/plain"
+echo "Content-type: .ovpn"
 echo "Content-Disposition: attachment; filename=\"$client.ovpn\""
 echo ""
 while read c; do
