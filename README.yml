@@ -1,0 +1,131 @@
+-------------------------------------------------------------------------------------
+# Wireguard-UI Panel Installation
+# Reference Link: https://linuxiac.com/how-to-set-up-wireguard-vpn-with-docker/
+-------------------------------------------------------------------------------------
+
+---------------------------Docker & Docker Compose Installation----------------------
+
+#1 update and upgrade system repository
+sudo apt update && sudo apt upgrade -y
+
+#2 Install required dependencies
+sudo apt install lsb-release ca-certificates apt-transport-https software-properties-common -y
+
+#3 Adding Docker repository to system sources
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+#4 Update system packages
+sudo apt update
+
+#5 Install Docker on Ubuntu 22.04
+sudo apt install docker-ce -y
+
+#6 Verify Docker status
+sudo systemctl status docker
+
+#7 Download Docker Compose package
+mkdir -p ~/.docker/cli-plugins/
+curl -SL https://github.com/docker/compose/releases/download/v2.5.0/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
+
+#8 Docker Compose Installation
+chmod +x ~/.docker/cli-plugins/docker-compose
+apt  install docker-compose -y
+
+docker --version
+docker compose version
+
+-----------------------------Wireguard-UI Panel Installation-----------------------------
+
+#9 Set Up WireGuard VPN Server & WireGuard-UI with Docker Compose
+
+mkdir wireguard
+cd wireguard
+nano docker-compose.yaml
+
+#9.1 
+
+version: "3"
+
+services:
+
+  # WireGuard VPN service
+  wireguard:
+    image: linuxserver/wireguard:latest
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./config:/config
+    ports:
+      # Port for WireGuard-UI
+      - "5000:5000"
+      # Port of the WireGuard VPN server
+      - "51820:51820/udp"
+
+  # WireGuard-UI service
+  wireguard-ui:
+    image: ngoduykhanh/wireguard-ui:latest
+    container_name: wireguard-ui
+    depends_on:
+      - wireguard
+    cap_add:
+      - NET_ADMIN
+    # Use the network of the 'wireguard' service
+    # This enables to show active clients in the status page
+    network_mode: service:wireguard
+    environment:
+      - SENDGRID_API_KEY
+      - EMAIL_FROM_ADDRESS
+      - EMAIL_FROM_NAME
+      - SESSION_SECRET
+      - WGUI_USERNAME=admin
+      - WGUI_PASSWORD=password
+      - WG_CONF_TEMPLATE
+      - WGUI_MANAGE_START=true
+      - WGUI_MANAGE_RESTART=true
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+    volumes:
+      - ./db:/app/db
+      - ./config:/etc/wireguard
+
+
+#10 Run the Containers with Docker Compose
+
+docker-compose up -d
+
+#11 Configure the WireGuard VPN Server Using WireGuard-UI
+
+http://server-ip-address:5000
+
+#12 http://server-ip-address
+# switch to the “Wireguard Server
+# “Post Up Script”
+iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+
+# “Post Down Script“
+
+iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+
+# Go to the “Global Settings” tab and carefully review the information.
+
+#13 Create a New WireGuard Client and Test it
+
+#14 open firewall ports
+apt install ufw
+
+ufw allow 5000
+ufw allow 51820
+
+ufw enable
+ufw start
+
+------------------------------Additional Docker Commands------------------------------------
+#15 in any case if the server rebooted and wireguard was not functioning start the relevant docker container
+docker ps -a
+
+docker start CONTAINER_ID
+docker stop CONTAINER_I
