@@ -1,3 +1,42 @@
+ sudo yum install radcli
+
+
+ sudo nano /etc/openvpn/server.conf
+
+plugin /usr/lib64/openvpn/plugins/openvpn-plugin-auth-pam.so /usr/lib64/openvpn/plugins/radcli.so
+client-cert-not-required
+username-as-common-name
+verify-client-cert none
+remote-cert-tls client
+radcli_config_file /etc/radcli/radiusclient.conf
+radcli_dictionary_file /etc/radcli/dictionary
+radcli_auth_server localhost
+radcli_auth_port 1812
+radcli_auth_secret secret_key
+
+ sudo mkdir /etc/radcli
+ sudo nano /etc/radcli/radiusclient.conf
+
+radius_server 127.0.0.1
+radius_server_port 1812
+radius_server_secret secret_key
+dictionary_mapping /etc/radcli/dictionary
+
+ sudo nano /etc/radcli/dictionary
+
+#
+# Radcli dictionary
+#
+
+#
+#  This dictionary is a concatenation of all the dictionaries
+#  in /etc/raddb/dictionary
+#
+#
+INCLUDE /etc/raddb/dictionary
+
+sudo systemctl restart openvpn
+
 
 yum install radcli -y
 ==================================
