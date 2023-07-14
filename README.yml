@@ -1,3 +1,150 @@
+Install OpenConnect VPN Server (ocserv) and requrimnts
+
+yum install epel-release -y
+yum install ocserv -y
+yum install nano -y
+yum install firewalld -y
+
+=====================================================
+Open Ports in Firewall
+
+systemctl start firewalld
+systemctl enable firewalld
+systemctl start firewalld
+
+sudo firewall-cmd --permanent --add-port=443/tcp
+sudo firewall-cmd --permanent --add-port=443/udp
+sudo firewall-cmd --permanent --add-port=80/tcp
+sudo firewall-cmd --permanent --add-port=22/tcp
+
+sudo systemctl reload firewalld
+=====================================================
+Install Let’s Encrypt Client (Certbot)
+
+yum install certbot
+
+sudo certbot certonly --standalone --preferred-challenges http --agree-tos --email you@example.com -d vpn.example.com
+
+
+=====================================================
+Edit OpenConnect VPN Server Configuration File
+
+comment following line
+auth = "pam"
+
+and add below line
+auth = "plain[passwd=/etc/ocserv/ocpasswd]"
+
+find following lines and change cert patch
+server-cert = /etc/pki/ocserv/public/server.crt
+server-key = /etc/pki/ocserv/private/server.key
+
+uncomment following lines
+
+compression = true
+
+max-clients = 0
+
+max-same-clients = 0
+
+keepalive = 60
+
+try-mtu-discovery = true
+
+idle-timeout=1200
+mobile-idle-timeout=240
+
+tunnel-all-dns = true
+
+default-domain = vpn.example.com
+
+set your ip range 
+
+#ipv4-network = 192.168.1.0
+#ipv4-netmask = 255.255.255.0
+
+Change dns resolver address if want
+
+dns = 8.8.8.8
+dns = 8.8.4.4
+
+comment following lines
+
+#route = 10.10.10.0/255.255.255.0
+#route = 192.168.0.0/255.255.0.0
+#route = fef4:db8:1000:1001::/64
+#no-route = 192.168.5.0/255.255.255.0
+
+
+comment below line to for stop erro on iOS "Failed to download the AnyConnect profile. Please try again."
+
+user-profile = profile.xml
+
+find below line and change it to disable TLS 1.0 and TLS 1.1 in OpenConnect VPN server
+
+tls-priorities = "NORMAL:%SERVER_PRECEDENCE:%COMPAT:-VERS-SSL3.0"
+
+
+tls-priorities = "NORMAL:%SERVER_PRECEDENCE:%COMPAT:-RSA:-VERS-SSL3.0:-ARCFOUR-128:-VERS-TLS1.0:-VERS-TLS1.1"
+
+
+save and exit
+=====================================================
+Creating VPN Accounts
+
+ocpasswd -c /etc/ocserv/ocpasswd username
+=====================================================
+
+systemctl start ocserv
+systemctl enable ocserv
+systemctl status ocserv
+
+=====================================================
+Enable IP Forwarding and TCP BBR algorithm
+
+echo "net.ipv4.ip_forward = 1" | sudo tee /etc/sysctl.d/60-custom.conf
+
+echo "net.core.default_qdisc=fq" | sudo tee -a /etc/sysctl.d/60-custom.conf
+echo "net.ipv4.tcp_congestion_control=bbr" | sudo tee -a /etc/sysctl.d/60-custom.conf
+
+sysctl -p /etc/sysctl.d/60-custom.conf
+
+
+====================================================
+Upgrade the kernel using the ELRepo RPM repository
+
+sudo rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+sudo rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-2.el7.elrepo.noarch.rpm
+
+sudo yum --enablerepo=elrepo-kernel install kernel-ml -y
+
+rpm -qa | grep kernel
+
+
+sudo egrep ^menuentry /etc/grub2.cfg | cut -f 2 -d \'
+
+sudo grub2-set-default 1
+shutdown -r now
+
+=====================================================
+Configure IP Masquerading in Firewall
+
+sudo firewall-cmd --permanent --add-rich-rule='rule family="ipv4" source address="10.10.10.0/24" masquerade'
+sudo systemctl reload firewalld
+
+=====================================================
+Auto-Renew Let’s Encrypt Certificate
+
+sudo crontab -e
+
+@daily certbot renew --quiet && systemctl restart ocserv
+
+=====================================================
+
+
+##############ibsng
+
+
 # yum install httpd php postgresql postgresql-server postgresql-python perl unzip wget nano bzip2 -y
 
 Download IBsng :
