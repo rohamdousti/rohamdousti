@@ -1,131 +1,170 @@
--------------------------------------------------------------------------------------
-# Wireguard-UI Panel Installation
-# Reference Link: https://linuxiac.com/how-to-set-up-wireguard-vpn-with-docker/
--------------------------------------------------------------------------------------
+# yum install httpd php postgresql postgresql-server postgresql-python perl unzip wget nano bzip2 -y
 
----------------------------Docker & Docker Compose Installation----------------------
+Download IBsng :
 
-#1 update and upgrade system repository
-sudo apt update && sudo apt upgrade -y
+# wget https://master.dl.sourceforge.net/project/ibsng/IBSng-A1.24.tar.bz2
 
-#2 Install required dependencies
-sudo apt install lsb-release ca-certificates apt-transport-https software-properties-common -y
+# tar -xvjf IBSng-A1.24.tar.bz2 -C /usr/local
 
-#3 Adding Docker repository to system sources
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+_______________________________
 
-#4 Update system packages
-sudo apt update
+Active Database :
 
-#5 Install Docker on Ubuntu 22.04
-sudo apt install docker-ce -y
+# service postgresql initdb
+# service postgresql start
 
-#6 Verify Docker status
-sudo systemctl status docker
+# nano  /var/lib/pgsql/data/pg_hba.conf
 
-#7 Download Docker Compose package
-mkdir -p ~/.docker/cli-plugins/
-curl -SL https://github.com/docker/compose/releases/download/v2.5.0/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
+Add This To first line :
 
-#8 Docker Compose Installation
-chmod +x ~/.docker/cli-plugins/docker-compose
-apt  install docker-compose -y
+local  IBSng   ibs            trust
 
-docker --version
-docker compose version
+_______________________________
 
------------------------------Wireguard-UI Panel Installation-----------------------------
+Make New Database : 
 
-#9 Set Up WireGuard VPN Server & WireGuard-UI with Docker Compose
+# su - postgres
+# createdb IBSng
+# createuser ibs
+# createlang plpgsql IBSng
+# exit
+# service postgresql restart
 
-mkdir wireguard
-cd wireguard
-nano docker-compose.yaml
-
-#9.1 
-
-version: "3"
-
-services:
-
-  # WireGuard VPN service
-  wireguard:
-    image: linuxserver/wireguard:latest
-    container_name: wireguard
-    cap_add:
-      - NET_ADMIN
-    volumes:
-      - ./config:/config
-    ports:
-      # Port for WireGuard-UI
-      - "5000:5000"
-      # Port of the WireGuard VPN server
-      - "51820:51820/udp"
-
-  # WireGuard-UI service
-  wireguard-ui:
-    image: ngoduykhanh/wireguard-ui:latest
-    container_name: wireguard-ui
-    depends_on:
-      - wireguard
-    cap_add:
-      - NET_ADMIN
-    # Use the network of the 'wireguard' service
-    # This enables to show active clients in the status page
-    network_mode: service:wireguard
-    environment:
-      - SENDGRID_API_KEY
-      - EMAIL_FROM_ADDRESS
-      - EMAIL_FROM_NAME
-      - SESSION_SECRET
-      - WGUI_USERNAME=admin
-      - WGUI_PASSWORD=password
-      - WG_CONF_TEMPLATE
-      - WGUI_MANAGE_START=true
-      - WGUI_MANAGE_RESTART=true
-    logging:
-      driver: json-file
-      options:
-        max-size: 50m
-    volumes:
-      - ./db:/app/db
-      - ./config:/etc/wireguard
+_______________________________
+/./usr/local/IBSng/scripts/setup.py
 
 
-#10 Run the Containers with Docker Compose
+Please Write This Number Step By Step :
 
-docker-compose up -d
+1 Install
+2 Test DB Connection and Continue
+2 Compile Configuration and Continue
+1 Import Tables and Continue
+Enter System password
+1 Copy ibs.conf to '/etc/httpd/conf.d'
+2 Chown apache directories to 'apache'
+5 Continue
+1 Copy logrotate Conf to /etc/logrotate.d
+3 Continue
+1 Copy Redhat init file to /etc/init.d
+2 Set IBSng to start on reboot
+b Back to main menu
+x Exit
 
-#11 Configure the WireGuard VPN Server Using WireGuard-UI
+_______________________________
 
-http://server-ip-address:5000
+Edit httpd :
 
-#12 http://server-ip-address
-# switch to the “Wireguard Server
-# “Post Up Script”
-iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+# nano /etc/httpd/conf/httpd.conf
 
-# “Post Down Script“
+Add This To First Line :
 
-iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+ServerName 127.0.0.1
+<Directory "/usr/local/IBSng/interface/IBSng">
+    AllowOverride None
+    Options None
+    Require all granted
+</Directory>
+_______________________________
 
-# Go to the “Global Settings” tab and carefully review the information.
+# nano /usr/local/IBSng/core/lib/IPy.py
 
-#13 Create a New WireGuard Client and Test it
+Add This To First Line :
+#coding:utf-8
+_______________________________
 
-#14 open firewall ports
-apt install ufw
+# nano /usr/local/IBSng/core/lib/mschap/des_c.py
 
-ufw allow 5000
-ufw allow 51820
+Add This To First Line :
+#coding:utf-8
+_______________________________
 
-ufw enable
-ufw start
+# nano /usr/local/IBSng/interface/IBSng/inc/error.php
 
-------------------------------Additional Docker Commands------------------------------------
-#15 in any case if the server rebooted and wireguard was not functioning start the relevant docker container
-docker ps -a
+Please Delete 9 Line From END And Replace This Code :
 
-docker start CONTAINER_ID
-docker stop CONTAINER_I
+$timeArr="IRDT/4.0/DST";
+#    $timeStr="{$timeArr["tm_year"]}/{$timeArr["tm_mon"]}/{$timeArr["tm_mday"]} {$timeArr["tm_hour"]}:{$timeArr["tm_min"]}";
+    $phperr=isset($php_errormsg)?$php_errormsg:"";
+#    fwrite($fh,"{$timeStr} {$msg} {$phperr}\n");
+    return;
+
+}
+
+?>
+_______________________________
+
+# nano /usr/local/IBSng/core/server/xmlrpcserver.py
+
+Add This To First Line :
+
+from xmlrpclib import Marshaller
+from decimal import Decimal
+
+
+def dump_decimal(self,value, write):
+    write("<value><double>")
+    write(str(value))
+    write("</double></value>\n")
+
+
+Marshaller.dispatch[Decimal] = dump_decimal
+
+_______________________________
+
+# nano /usr/local/IBSng/core/admin/admin.py
+
+Push Ctrl+W And Find This Line :
+self.deposit+=deposit_change
+
+Ctrl+W
+
+Change And Replace To :
+
+self.deposit+=float(deposit_change)
+
+_______________________________
+
+Please Open TCP Port :
+
+#sudo iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+#sudo iptables -A OUTPUT -p tcp --sport 1812 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+#sudo iptables -A INPUT -p tcp --dport 1813 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+#iptables-save
+
+OR
+
+sudo firewall-cmd --add-port=80/tcp --permanent
+sudo firewall-cmd --add-port=1812/udp --permanent
+sudo firewall-cmd --add-port=1813/udp --permanent
+sudo firewall-cmd --reload
+
+_______________________________
+
+Edit SELinux Config :
+
+# nano /etc/selinux/config
+
+SELINUX=disabled
+
+_______________________________
+
+Run IBSng :
+
+chkconfig httpd on
+chkconfig postgresql on
+chkconfig IBSng on
+service httpd restart
+service postgresql restart
+setenforce 0
+service IBSng start
+
+_______________________________
+
+Run : http://YourIP/IBSng/admin
+
+
+
+
+
+
