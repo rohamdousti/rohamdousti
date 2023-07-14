@@ -1,3 +1,45 @@
+
+yum install radcli -y
+==================================
+cd /etc/radcli/r
+
+nano radiusclient.conf
+
+nas-identifier fw01  
+authserver "IBSnGIP"  
+acctserver "IBSnGIP" 
+servers /etc/radcli/servers  
+dictionary /etc/radcli/dictionary  
+default_realm  
+radius_timeout 10  
+radius_retries 3  
+bindaddr *
+
+
+nano servers 
+
+IBSngIP radiustestsecretpassword
+
+==============================================
+nano /etc/ocserv/ocserv.conf
+
+
+auth = "radius [config=/etc/radcli/radiusclient.conf,groupconfig=true]"
+acct = "radius [config=/etc/radcli/radiusclient.conf,groupconfig=true]"
+
+==============================================
+systemctl restart ocserv
+
+
+
+
+
+
+
+
+
+
+
 &___client
 client
 dev tun2
